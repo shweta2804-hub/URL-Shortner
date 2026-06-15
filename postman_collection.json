@@ -1,0 +1,206 @@
+{
+  "info": {
+    "name": "URL Shortner API",
+    "description": "Complete API documentation for the URL Shortner application.\n\n## Authentication\nAll endpoints except `/api/register`, `/api/login`, and `/<code>` require a JWT token in the `Authorization` header:\n```\nAuthorization: Bearer <your-token>\n```\n\n## Base URL\n- Local: `http://127.0.0.1:5000`\n- Production: Set `base_url` variable accordingly",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('userId', jsonData.user.id);",
+                  "    console.log('Token saved:', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "register"]
+            },
+            "description": "Register a new user account.\n\n**Request Body:**\n- `username` (string, required): 2-80 characters\n- `email` (string, required): Valid email format\n- `password` (string, required): At least 6 characters\n\n**Response (201):**\n```json\n{\n  \"message\": \"User registered successfully\",\n  \"token\": \"eyJ...\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"johndoe\",\n    \"email\": \"john@example.com\"\n  }\n}\n```\n\n**Errors:** 400 (validation), 409 (duplicate email), 500 (server error)"
+          }
+        },
+        {
+          "name": "POST /api/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved:', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "login"]
+            },
+            "description": "Authenticate with email and password.\n\n**Request Body:**\n- `email` (string, required)\n- `password` (string, required)\n\n**Response (200):**\n```json\n{\n  \"message\": \"Login successful\",\n  \"token\": \"eyJ...\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"johndoe\",\n    \"email\": \"john@example.com\"\n  }\n}\n```\n\n**Errors:** 400 (missing fields), 401 (invalid credentials)"
+          }
+        },
+        {
+          "name": "GET /api/profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Get the authenticated user's profile and URL statistics.\n\n**Headers:**\n- `Authorization: Bearer <token>` (required)\n\n**Response (200):**\n```json\n{\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"johndoe\",\n    \"email\": \"john@example.com\",\n    \"created_at\": \"2026-06-15T14:30:00\"\n  },\n  \"stats\": {\n    \"total_urls\": 5,\n    \"total_clicks\": 42\n  }\n}\n```\n\n**Errors:** 401 (no token), 404 (user not found)"
+          }
+        }
+      ],
+      "description": "Authentication and user management endpoints"
+    },
+    {
+      "name": "URLs",
+      "item": [
+        {
+          "name": "POST /api/shorten",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/very/long/url/that/needs/shortening\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shorten",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shorten"]
+            },
+            "description": "Create a shortened URL.\n\n**Headers:**\n- `Authorization: Bearer <token>` (required)\n\n**Request Body:**\n- `url` (string, required): Must start with http:// or https://, max 2048 chars\n\n**Response (201):**\n```json\n{\n  \"message\": \"URL shortened successfully\",\n  \"url\": {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"original_url\": \"https://example.com/very/long/url/that/needs/shortening\",\n    \"short_code\": \"aB3xYz\",\n    \"short_url\": \"http://127.0.0.1:5000/aB3xYz\",\n    \"clicks\": 0,\n    \"created_at\": \"2026-06-15T14:30:00\"\n  }\n}\n```\n\n**Errors:** 400 (invalid URL), 401 (no token), 500 (server error)"
+          }
+        },
+        {
+          "name": "GET /api/urls",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/urls",
+              "host": ["{{base_url}}"],
+              "path": ["api", "urls"]
+            },
+            "description": "List all URLs created by the authenticated user, ordered newest first.\n\n**Headers:**\n- `Authorization: Bearer <token>` (required)\n\n**Response (200):**\n```json\n{\n  \"total\": 2,\n  \"urls\": [\n    {\n      \"id\": 2,\n      \"user_id\": 1,\n      \"original_url\": \"https://example.com/page2\",\n      \"short_code\": \"XyZ789\",\n      \"short_url\": \"http://127.0.0.1:5000/XyZ789\",\n      \"clicks\": 5,\n      \"created_at\": \"2026-06-15T14:35:00\"\n    },\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"original_url\": \"https://example.com/page1\",\n      \"short_code\": \"aB3xYz\",\n      \"short_url\": \"http://127.0.0.1:5000/aB3xYz\",\n      \"clicks\": 10,\n      \"created_at\": \"2026-06-15T14:30:00\"\n    }\n  ]\n}\n```\n\n**Errors:** 401 (no token), 404 (user not found)"
+          }
+        },
+        {
+          "name": "GET /api/analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics"]
+            },
+            "description": "Get detailed click analytics for the authenticated user's URLs.\n\n**Headers:**\n- `Authorization: Bearer <token>` (required)\n\n**Response (200):**\n```json\n{\n  \"total_urls\": 5,\n  \"total_clicks\": 100,\n  \"avg_clicks\": 20,\n  \"most_clicked_count\": 50,\n  \"top_urls\": [\n    {\n      \"id\": 1,\n      \"original_url\": \"https://example.com/popular\",\n      \"short_code\": \"abc123\",\n      \"short_url\": \"http://127.0.0.1:5000/abc123\",\n      \"clicks\": 50,\n      \"created_at\": \"2026-06-15T14:30:00\"\n    }\n  ]\n}\n```\n\n**Errors:** 401 (no token), 404 (user not found)"
+          }
+        },
+        {
+          "name": "GET /{short_code} (Redirect)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/abc123",
+              "host": ["{{base_url}}"],
+              "path": ["abc123"]
+            },
+            "description": "Follow a short URL to its original destination.\n\n**Path Parameters:**\n- `short_code` (string, required): The 6-character short code\n\n**Response:** 302 Redirect to the original URL\n\n**Errors:** 404 (short code not found)\n\nNote: This endpoint does NOT require authentication."
+          }
+        }
+      ],
+      "description": "URL shortening and management endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
