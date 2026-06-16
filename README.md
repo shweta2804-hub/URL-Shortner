@@ -1,6 +1,6 @@
 # 📚 Study Material Hub
 
-A production-ready **study material organizer** built with **Flask** and **PostgreSQL**. Features JWT-based authentication, RESTful APIs, view analytics, search, and deployment support for **Render**.
+A production-ready **study material organizer** built with **FastAPI** and **PostgreSQL (Neon)**. Features JWT-based authentication, RESTful APIs with automatic OpenAPI documentation, view analytics, search, and one-click deployment on **Render**.
 
 ---
 
@@ -8,27 +8,32 @@ A production-ready **study material organizer** built with **Flask** and **Postg
 
 - **Study Materials** — Create materials with title, description, subject, category, and resource link
 - **Auto-generated Resource Codes** — Shareable short links for each resource
-- **JWT Authentication** — Secure register/login with JSON Web Tokens
+- **JWT Authentication** — Secure register/login with JSON Web Tokens (PyJWT)
 - **User Dashboards** — Each user sees only their own materials
 - **View Analytics** — Track total views, average views, and top-performing materials
 - **Search** — Search materials by title, description, subject, or category
-- **RESTful API** — Full JSON API for integration with frontend apps or mobile
-- **PostgreSQL** — Robust relational database with connection pooling
-- **Password Security** — Passwords hashed with `werkzeug.security`
-- **Input Validation** — Email format, URL format, length constraints
-- **Deployment Ready** — Render config, Gunicorn, environment variables
+- **RESTful API** — Full JSON API with OpenAPI documentation (Swagger UI)
+- **PostgreSQL (Neon)** — Cloud-native relational database with connection pooling
+- **Password Security** — Passwords hashed with `werkzeug.security` (scrypt)
+- **Input Validation** — Email format, URL format, length constraints via Pydantic
+- **Automatic API Docs** — Swagger UI at `/docs`, OpenAPI schema at `/openapi.json`
+- **Health & Stats** — Built-in `/health` and `/stats` endpoints
+- **Deployment Ready** — Render config, uvicorn, environment variables
 
 ## 🛠 Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
-| **Python 3** | Programming language |
-| **Flask 3** | Web framework |
-| **Flask-JWT-Extended** | JWT authentication |
-| **psycopg2** | PostgreSQL database driver |
-| **Werkzeug** | Password hashing |
-| **Gunicorn** | Production WSGI server |
-| **Render** | Cloud deployment platform |
+| **Python 3.10+** | Programming language |
+| **FastAPI** | Async web framework with automatic OpenAPI |
+| **PyJWT** | JWT authentication (HS256) |
+| **PostgreSQL (Neon)** | Cloud database with SSL |
+| **psycopg2-binary** | PostgreSQL database driver |
+| **Werkzeug** | Password hashing (scrypt + salt) |
+| **Pydantic** | Request/response validation models |
+| **uvicorn** | Production ASGI server |
+| **Jinja2** | HTML templating (legacy form pages) |
+| **Render** | Cloud deployment platform (Free tier) |
 
 ---
 
@@ -37,21 +42,30 @@ A production-ready **study material organizer** built with **Flask** and **Postg
 ```
 Study Material Hub/
 │
-├── app.py                 # Application factory, blueprint registration
-├── config.py              # Configuration from environment variables
-├── database.py            # PostgreSQL connection pool & table init
+├── app_fastapi.py          # FastAPI application entry point (uvicorn)
+├── config.py               # Configuration from environment variables
+├── database.py             # PostgreSQL connection pool & table init
+├── dependencies.py         # JWT authentication dependency injection
 │
-├── models/
+├── routers/                # FastAPI route handlers
 │   ├── __init__.py
-│   ├── user.py            # User CRUD operations
-│   └── material.py        # Material CRUD, search & analytics operations
+│   ├── auth_router.py      # /api/register, /api/login, /api/profile
+│   ├── materials_router.py # /api/materials, /api/analytics
+│   └── common_router.py    # /, /dashboard, /register (HTML), /health, /stats
 │
-├── routes/
+├── schemas/                # Pydantic request/response models
 │   ├── __init__.py
-│   ├── auth.py            # /api/register, /api/login, /api/profile
-│   └── materials.py       # /api/materials, /api/analytics, /<code>
+│   ├── auth.py             # RegisterRequest, LoginRequest, ProfileStats
+│   ├── material.py         # CreateMaterialRequest, MaterialResponse
+│   ├── common.py           # ErrorResponse, HealthResponse, StatsResponse
+│   └── user.py             # UserPublic, UserResponse
 │
-├── templates/             # HTML templates (legacy form-based UI)
+├── models/                 # Database access layer
+│   ├── __init__.py
+│   ├── user.py             # User CRUD operations
+│   └── material.py         # Material CRUD, search & analytics
+│
+├── templates/              # HTML templates (legacy form-based UI)
 │   ├── login.html
 │   ├── register.html
 │   └── dashboard.html
@@ -61,12 +75,10 @@ Study Material Hub/
 │   └── js/
 │       └── main.js
 │
-├── .env                   # Environment variables (NOT committed)
+├── .env                    # Environment variables (NOT committed)
 ├── .gitignore
 ├── requirements.txt
-├── render.yaml            # Render deployment config
-├── postman_collection.json
-├── MIGRATION_PLAN.md
+├── render.yaml             # Render deployment config
 └── README.md
 ```
 
@@ -77,7 +89,7 @@ Study Material Hub/
 ### Prerequisites
 
 - **Python 3.10+**
-- **PostgreSQL 14+** running locally or on a server
+- **PostgreSQL 14+** running locally or a **Neon** cloud database
 - **pip** (Python package manager)
 
 ### Step 1: Clone & Enter Directory
@@ -107,25 +119,26 @@ pip install -r requirements.txt
 
 ### Step 4: Set Up PostgreSQL
 
-Create the database:
+Create a database (local or Neon):
 
 ```bash
-# Connect to PostgreSQL
+# Local PostgreSQL
 psql -U postgres
-
-# Create database
 CREATE DATABASE study_material_hub;
-
-# Exit
 \q
+
+# Neon: Create a database from the Neon dashboard and copy the connection string
 ```
 
 ### Step 5: Configure Environment
 
-Edit `.env` with your PostgreSQL credentials:
+Edit `.env` with your database credentials:
 
 ```ini
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/study_material_hub
+DATABASE_URL=postgresql://postgres:password@localhost:5432/study_material_hub
+# For Neon:
+# DATABASE_URL=postgresql://user:pass@ep-xxxx.us-east-1.aws.neon.tech/neondb?sslmode=require
+
 JWT_SECRET_KEY=your-random-secret-key-here
 SECRET_KEY=another-random-secret-key
 ```
@@ -133,12 +146,23 @@ SECRET_KEY=another-random-secret-key
 ### Step 6: Run the Application
 
 ```bash
-python app.py
+# Development with auto-reload
+uvicorn app_fastapi:app --reload
+
+# Or via Python
+python app_fastapi.py
 ```
 
 The server starts at **http://127.0.0.1:5000**.
 
-On first startup, the database tables (`users` and `materials`) are created automatically.
+On first startup, the database tables (`users` and `materials`) are created automatically via the lifespan handler.
+
+### Step 7: Explore API Documentation
+
+Open your browser to:
+- **Swagger UI:** http://127.0.0.1:5000/docs
+- **ReDoc:** http://127.0.0.1:5000/redoc
+- **OpenAPI Schema:** http://127.0.0.1:5000/openapi.json
 
 ---
 
@@ -395,19 +419,51 @@ Follow a resource link to its original destination. No authentication required.
 
 ---
 
+### `GET /health`
+
+Health check endpoint for monitoring and Render load balancer.
+
+**Response `200` — OK:**
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "version": "1.0.0"
+}
+```
+
+---
+
+### `GET /stats`
+
+Get overall system statistics.
+
+**Response `200` — OK:**
+```json
+{
+  "total_users": 10,
+  "total_materials": 25,
+  "total_views": 150,
+  "average_views_per_material": 6.0
+}
+```
+
+---
+
 ## 🌐 Deployment
 
-### Deploy to Render
+### Deploy to Render (One-Click)
 
-This project includes a `render.yaml` file for one-click deployment on Render.
+This project includes a `render.yaml` Blueprint for automatic deployment.
 
 1. **Push code to GitHub**
 2. In [Render Dashboard](https://dashboard.render.com), click **"New +" → "Blueprint"**
 3. Connect your repository
 4. Render automatically:
-   - Creates a PostgreSQL database
-   - Sets environment variables
+   - Creates a PostgreSQL (Neon) database
+   - Sets environment variables (`SECRET_KEY`, `JWT_SECRET_KEY` auto-generated)
    - Builds and deploys the application
+   - Sets the health check path to `/health`
 
 #### Manual Render Setup
 
@@ -417,27 +473,33 @@ If not using Blueprint:
 2. Set:
    - **Runtime:** Python
    - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `gunicorn app:create_app --worker-class gthread --workers 2 --threads 4 --bind 0.0.0.0:$PORT --timeout 120`
+   - **Start Command:** `uvicorn app_fastapi:app --host 0.0.0.0 --port $PORT --workers 2 --timeout-keep-alive 120`
+   - **Health Check Path:** `/health`
 3. Add a **PostgreSQL database** and connect it to the web service
 4. Add environment variables:
-   - `SECRET_KEY` (auto-generate)
-   - `JWT_SECRET_KEY` (auto-generate)
-   - `PRODUCTION=true`
-   - `DEBUG=false`
-   - `BASE_URL=https://your-app.onrender.com`
+
+| Variable | Required | Value |
+|----------|----------|-------|
+| `DATABASE_URL` | ✅ | Auto-filled from linked database |
+| `SECRET_KEY` | ✅ | Click "Generate" |
+| `JWT_SECRET_KEY` | ✅ | Click "Generate" |
+| `PRODUCTION` | ✅ | `true` |
+| `DEBUG` | ✅ | `false` |
+| `HOST` | ✅ | `0.0.0.0` |
+| `BASE_URL` | ✅ | `https://your-app.onrender.com` |
 
 ### Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | ✅ Yes | — | PostgreSQL connection string |
-| `SECRET_KEY` | ✅ Yes (prod) | `change-this-in-production` | Flask secret key |
-| `JWT_SECRET_KEY` | ✅ Yes (prod) | — | JWT signing key |
-| `DEBUG` | ❌ No | `false` | Enable Flask debug mode |
-| `PRODUCTION` | ❌ No | `false` | Enables production validation |
+| `DATABASE_URL` | ✅ Yes | — | PostgreSQL connection string (with `?sslmode=require` for Neon) |
+| `SECRET_KEY` | ✅ Yes | — | Application secret key |
+| `JWT_SECRET_KEY` | ✅ Yes | — | JWT signing key |
+| `DEBUG` | ❌ No | `false` | Enable debug mode (must be `false` in production) |
+| `PRODUCTION` | ❌ No | `false` | Enables production validation checks |
 | `PORT` | ❌ No | `5000` | Server port |
 | `HOST` | ❌ No | `127.0.0.1` | Server bind address |
-| `BASE_URL` | ❌ No | `http://127.0.0.1:5000` | Base URL for short links |
+| `BASE_URL` | ❌ No | `http://127.0.0.1:5000` | Base URL for resource short links |
 | `JWT_ACCESS_TOKEN_EXPIRES` | ❌ No | `3600` | Token expiry in seconds |
 
 ---
@@ -456,6 +518,18 @@ If not using Blueprint:
 
 ---
 
+## ✅ Verification Tests
+
+Run the built-in test suite (no external dependencies required):
+
+```bash
+python test_fastapi_direct.py
+```
+
+This tests all endpoints including health, registration, login, JWT validation, CRUD operations, search, analytics, redirect, and PostgreSQL connectivity.
+
+---
+
 ## 🚢 Deployment Checklist
 
 ### Pre-Deployment
@@ -464,9 +538,10 @@ If not using Blueprint:
 - [ ] Set `DEBUG=false` in environment
 - [ ] Generate strong `SECRET_KEY` and `JWT_SECRET_KEY`
 - [ ] Update `BASE_URL` to your production domain
-- [ ] Ensure PostgreSQL database is created
+- [ ] Ensure Neon PostgreSQL database is created
 - [ ] Test all API endpoints locally
-- [ ] Verify no `print()` or debug statements in production code
+- [ ] Verify Swagger UI loads at `/docs`
+- [ ] Verify health endpoint at `/health`
 
 ### Render Deployment
 
@@ -474,7 +549,9 @@ If not using Blueprint:
 - [ ] Connect repository to Render
 - [ ] Verify Blueprint deployment or configure manually
 - [ ] Check logs for any startup errors
-- [ ] Test health endpoint: `GET /api/materials` with a valid token
+- [ ] Test `/health` endpoint (Render will use this for health checks)
+- [ ] Verify database connection: `{"database": "connected"}`
+- [ ] Test Swagger UI at `https://your-app.onrender.com/docs`
 - [ ] Set up custom domain (optional)
 
 ### Post-Deployment
@@ -484,19 +561,21 @@ If not using Blueprint:
 - [ ] Verify the redirect works
 - [ ] Check analytics data
 - [ ] Test search functionality
-- [ ] Monitor error logs
+- [ ] Monitor error logs on Render dashboard
 
 ---
 
 ## 🔒 Security
 
 - Passwords hashed with **scrypt** via `werkzeug.security.generate_password_hash`
-- JWT tokens signed with **HS256** using `flask-jwt-extended`
+- JWT tokens signed with **HS256** using `PyJWT`
 - Password hashes **never exposed** in API responses
+- All database queries use **parameterized statements** (SQL injection protected)
 - Connection pooling with **automatic commit/rollback**
-- Input validation on **all** endpoints (email format, URL format, length limits)
-- Database credentials read from **environment variables only**
+- Input validation via **Pydantic** on all endpoints (email format, URL format, length limits)
+- Secrets read from **environment variables only** — no hard-coded values
 - `.env` file excluded from version control via `.gitignore`
+- Production config validation at startup (`Config.validate()`)
 
 ---
 
@@ -508,7 +587,9 @@ This project is for educational and portfolio purposes.
 
 ## 🙏 Acknowledgments
 
-- [Flask](https://flask.palletsprojects.com/)
-- [Flask-JWT-Extended](https://flask-jwt-extended.readthedocs.io/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [PyJWT](https://pyjwt.readthedocs.io/)
 - [psycopg2](https://www.psycopg.org/)
+- [Neon PostgreSQL](https://neon.tech/)
 - [Render](https://render.com/)
+- [Uvicorn](https://www.uvicorn.org/)
