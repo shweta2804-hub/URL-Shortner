@@ -137,8 +137,15 @@ def profile():
 
     # Use lightweight stats query instead of full analytics
     stats = UrlModel.get_user_stats(user["id"])
+    
+    # Get analytics for additional data
+    analytics_data = UrlModel.get_user_analytics(user["id"])
 
     return jsonify({
         "user": user,
-        "stats": stats
+        "stats": {
+            **stats,
+            "avg_clicks": analytics_data.get("avg_clicks", 0),
+            "top_url": analytics_data["top_urls"][0]["original_url"] if analytics_data.get("top_urls") else "N/A"
+        }
     }), 200

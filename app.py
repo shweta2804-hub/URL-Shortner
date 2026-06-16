@@ -44,6 +44,10 @@ def create_app():
     def home():
         return render_template("login.html")
 
+    @app.route('/dashboard')
+    def dashboard_page():
+        return render_template("dashboard.html")
+
     @app.route('/register', methods=['GET', 'POST'])
     def register_page():
         from werkzeug.security import generate_password_hash

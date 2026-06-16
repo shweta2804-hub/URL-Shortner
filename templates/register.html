@@ -1,33 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="light">
 <head>
-<title>Register</title>
-<link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — URL Shortener</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="/static/style.css">
+
+  <style>
+    [data-theme="dark"] body { background: #0b1120; }
+  </style>
 </head>
 <body>
 
-<h2>Register</h2>
+  <!-- ===== SPLIT-SCREEN AUTH LAYOUT ===== -->
+  <div class="auth-container">
 
-<form method="POST">
+    <!-- LEFT: Register Form -->
+    <div class="auth-left">
+      <div class="auth-card">
+        <div class="card">
 
-<input
-name="username"
-placeholder="Username">
+          <!-- Logo -->
+          <div class="auth-logo">
+            <div class="logo-icon">
+              <i class="bi bi-link-45deg"></i>
+            </div>
+            <h2 class="text-gradient">Get Started</h2>
+            <p>Create your free account</p>
+          </div>
 
-<input
-name="email"
-placeholder="Email">
+          <!-- Register Form -->
+          <form onsubmit="handleRegister(event)" class="needs-validation" novalidate>
 
-<input
-type="password"
-name="password"
-placeholder="Password">
+            <!-- Username -->
+            <div class="mb-3">
+              <label class="form-label" for="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                class="form-control"
+                placeholder="Choose a username"
+                required
+                autocomplete="username"
+                minlength="2"
+              >
+              <div class="invalid-feedback"></div>
+            </div>
 
-<button>
-Register
-</button>
+            <!-- Email -->
+            <div class="mb-3">
+              <label class="form-label" for="email">Email address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-control"
+                placeholder="you@example.com"
+                required
+                autocomplete="email"
+              >
+              <div class="invalid-feedback"></div>
+            </div>
 
-</form>
+            <!-- Password -->
+            <div class="mb-3">
+              <label class="form-label" for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-control"
+                placeholder="Create a strong password"
+                required
+                autocomplete="new-password"
+                minlength="6"
+              >
+              <div class="invalid-feedback"></div>
+
+              <!-- Password Strength Indicator -->
+              <div class="password-strength">
+                <div class="strength-bar">
+                  <div class="strength-bar-fill"></div>
+                </div>
+                <span class="strength-text"></span>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4">
+              <label class="form-label" for="confirm_password">Confirm password</label>
+              <input
+                type="password"
+                id="confirm_password"
+                name="confirm_password"
+                class="form-control"
+                placeholder="Repeat your password"
+                required
+                autocomplete="new-password"
+              >
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary w-100 py-2">
+              <i class="bi bi-person-plus me-2"></i>Create Account
+            </button>
+
+          </form>
+
+          <!-- Footer -->
+          <div class="auth-footer-text">
+            Already have an account?
+            <a href="/" class="fw-semibold">Sign in</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Illustration / Branding -->
+    <div class="auth-right">
+      <div class="auth-illustration">
+        <div class="illustration-icon">
+          <i class="bi bi-rocket-takeoff"></i>
+        </div>
+        <h3>Join URL Shortener</h3>
+        <p>
+          Start creating short, trackable links in seconds. Monitor
+          your click analytics and grow your online presence.
+        </p>
+
+        <!-- Feature badges -->
+        <div class="feature-badges">
+          <span class="feature-badge">
+            <i class="bi bi-unlock-fill"></i> Free to use
+          </span>
+          <span class="feature-badge">
+            <i class="bi bi-graph-up-arrow"></i> Click tracking
+          </span>
+          <span class="feature-badge">
+            <i class="bi bi-shield-check"></i> Secure
+          </span>
+          <span class="feature-badge">
+            <i class="bi bi-infinity"></i> Unlimited links
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/main.js"></script>
 
 </body>
 </html>

@@ -107,6 +107,32 @@ def analytics():
     return jsonify(analytics_data), 200
 
 
+@urls_bp.route("/api/urls/<int:url_id>", methods=["DELETE"])
+@jwt_required()
+def delete_url_route(url_id):
+    """
+    Delete a URL owned by the authenticated user.
+
+    Headers:
+        Authorization: Bearer <token>
+
+    Responses:
+        200 - URL deleted successfully
+        401 - Missing/invalid token
+        404 - URL not found or not owned by user
+    """
+    current_email = get_jwt_identity()
+    user = UserModel.get_public_user_by_email(current_email)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    deleted = UrlModel.delete_url(url_id, user["id"])
+    if not deleted:
+        return jsonify({"error": "URL not found or not owned by user"}), 404
+
+    return jsonify({"message": "URL deleted successfully"}), 200
+
+
 @urls_bp.route("/<code>", methods=["GET"])
 def redirect_short_url(code):
     """

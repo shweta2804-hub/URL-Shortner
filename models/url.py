@@ -127,6 +127,32 @@ def get_user_stats(user_id):
     return {"total_urls": row[0], "total_clicks": row[1]}
 
 
+def delete_url(url_id, user_id):
+    """Delete a URL by its id, scoped to the user. Returns True if deleted."""
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM urls WHERE id = %s AND user_id = %s",
+            (url_id, user_id)
+        )
+        deleted = cur.rowcount > 0
+        cur.close()
+    return deleted
+
+
+def get_url_by_id(url_id):
+    """Return a URL record by its id, or None."""
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, user_id, original_url, short_code, clicks, created_at FROM urls WHERE id = %s",
+            (url_id,)
+        )
+        row = cur.fetchone()
+        cur.close()
+    return _url_from_row(row) if row else None
+
+
 def get_user_analytics(user_id):
     """Return detailed aggregate analytics for a user's URLs."""
     with get_db() as conn:
