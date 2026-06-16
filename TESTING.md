@@ -1,4 +1,4 @@
-# 🧪 API Testing Guide — URL Shortner
+# 🧪 API Testing Guide — Study Material Hub
 
 Complete step-by-step instructions to test all REST API endpoints using **Thunder Client** (VS Code extension) or **curl**.
 
@@ -20,7 +20,7 @@ Complete step-by-step instructions to test all REST API endpoints using **Thunde
 
 ### Prerequisites
 
-- PostgreSQL running with `url_shortner` database created
+- PostgreSQL running with `study_material_hub` database created
 - Virtual environment activated
 - All dependencies installed: `pip install -r requirements.txt`
 - `.env` configured with your PostgreSQL credentials
@@ -41,11 +41,12 @@ Server starts at **http://127.0.0.1:5000**
 |---|--------|----------|------|-------------|
 | 1 | `POST` | `/api/register` | ❌ Public | Create a new user account |
 | 2 | `POST` | `/api/login` | ❌ Public | Authenticate and get JWT token |
-| 3 | `GET` | `/api/profile` | ✅ Bearer Token | Get user profile + URL stats |
-| 4 | `POST` | `/api/shorten` | ✅ Bearer Token | Create a shortened URL |
-| 5 | `GET` | `/api/urls` | ✅ Bearer Token | List all user's URLs |
-| 6 | `GET` | `/api/analytics` | ✅ Bearer Token | Get detailed click analytics |
-| 7 | `GET` | `/<short_code>` | ❌ Public | Follow a short URL redirect |
+| 3 | `GET` | `/api/profile` | ✅ Bearer Token | Get user profile + material stats |
+| 4 | `POST` | `/api/materials` | ✅ Bearer Token | Create a study material |
+| 5 | `GET` | `/api/materials` | ✅ Bearer Token | List all user's materials |
+| 6 | `GET` | `/api/materials/search?q=` | ✅ Bearer Token | Search materials |
+| 7 | `GET` | `/api/analytics` | ✅ Bearer Token | Get detailed view analytics |
+| 8 | `GET` | `/<resource_code>` | ❌ Public | Follow a resource link redirect |
 
 ### Authentication Header
 
@@ -154,71 +155,82 @@ The JWT token is returned by both `/api/register` and `/api/login`.
     "created_at": "2026-06-15T14:30:00"
   },
   "stats": {
-    "total_urls": 0,
-    "total_clicks": 0
+    "total_materials": 0,
+    "total_views": 0
   }
 }
 ```
 
 ---
 
-#### 4️⃣ POST /api/shorten — Create Short URL
+#### 4️⃣ POST /api/materials — Create Study Material
 
 | Field | Value |
 |-------|-------|
 | **Method** | `POST` |
-| **URL** | `http://127.0.0.1:5000/api/shorten` |
+| **URL** | `http://127.0.0.1:5000/api/materials` |
 | **Headers** | `Content-Type: application/json` + `Authorization: Bearer <token>` |
 
 **Body → JSON:**
 ```json
 {
-  "url": "https://www.example.com/very/long/url/that/needs/shortening"
+  "title": "Python OOP Notes",
+  "resource_link": "https://www.example.com/python-oop.pdf",
+  "description": "Comprehensive notes on OOP in Python",
+  "subject": "Computer Science",
+  "category": "Notes"
 }
 ```
 
 **Expected Response `201`:**
 ```json
 {
-  "message": "URL shortened successfully",
-  "url": {
+  "message": "Study material created successfully",
+  "material": {
     "id": 1,
     "user_id": 1,
-    "original_url": "https://www.example.com/very/long/url/that/needs/shortening",
-    "short_code": "aB3xYz",
+    "title": "Python OOP Notes",
+    "description": "Comprehensive notes on OOP in Python",
+    "subject": "Computer Science",
+    "category": "Notes",
+    "resource_link": "https://www.example.com/python-oop.pdf",
+    "resource_code": "aB3xYz",
     "short_url": "http://127.0.0.1:5000/aB3xYz",
-    "clicks": 0,
+    "views": 0,
     "created_at": "2026-06-15T14:35:00"
   }
 }
 ```
 
 ```
-📋 Copy the `short_code` (e.g., "aB3xYz") — you'll need it to test the redirect.
+📋 Copy the `resource_code` (e.g., "aB3xYz") — you'll need it to test the redirect.
 ```
 
 ---
 
-#### 5️⃣ GET /api/urls — List User URLs
+#### 5️⃣ GET /api/materials — List User Materials
 
 | Field | Value |
 |-------|-------|
 | **Method** | `GET` |
-| **URL** | `http://127.0.0.1:5000/api/urls` |
+| **URL** | `http://127.0.0.1:5000/api/materials` |
 | **Headers** | `Authorization: Bearer <token>` |
 
 **Expected Response `200`:**
 ```json
 {
   "total": 1,
-  "urls": [
+  "materials": [
     {
       "id": 1,
       "user_id": 1,
-      "original_url": "https://www.example.com/very/long/url/that/needs/shortening",
-      "short_code": "aB3xYz",
+      "title": "Python OOP Notes",
+      "subject": "Computer Science",
+      "category": "Notes",
+      "resource_link": "https://www.example.com/python-oop.pdf",
+      "resource_code": "aB3xYz",
       "short_url": "http://127.0.0.1:5000/aB3xYz",
-      "clicks": 0,
+      "views": 0,
       "created_at": "2026-06-15T14:35:00"
     }
   ]
@@ -227,7 +239,38 @@ The JWT token is returned by both `/api/register` and `/api/login`.
 
 ---
 
-#### 6️⃣ GET /api/analytics — Get Analytics
+#### 6️⃣ GET /api/materials/search?q= — Search Materials
+
+| Field | Value |
+|-------|-------|
+| **Method** | `GET` |
+| **URL** | `http://127.0.0.1:5000/api/materials/search?q=python` |
+| **Headers** | `Authorization: Bearer <token>` |
+
+**Expected Response `200`:**
+```json
+{
+  "total": 1,
+  "query": "python",
+  "materials": [
+    {
+      "id": 1,
+      "title": "Python OOP Notes",
+      "subject": "Computer Science",
+      "category": "Notes",
+      "resource_link": "https://www.example.com/python-oop.pdf",
+      "resource_code": "aB3xYz",
+      "short_url": "http://127.0.0.1:5000/aB3xYz",
+      "views": 0,
+      "created_at": "2026-06-15T14:35:00"
+    }
+  ]
+}
+```
+
+---
+
+#### 7️⃣ GET /api/analytics — Get Analytics
 
 | Field | Value |
 |-------|-------|
@@ -238,17 +281,20 @@ The JWT token is returned by both `/api/register` and `/api/login`.
 **Expected Response `200`:**
 ```json
 {
-  "total_urls": 1,
-  "total_clicks": 0,
-  "avg_clicks": 0,
-  "most_clicked_count": 0,
-  "top_urls": [
+  "total_materials": 1,
+  "total_views": 0,
+  "avg_views": 0,
+  "most_viewed_count": 0,
+  "top_materials": [
     {
       "id": 1,
-      "original_url": "https://www.example.com/very/long/url/that/needs/shortening",
-      "short_code": "aB3xYz",
+      "title": "Python OOP Notes",
+      "subject": "Computer Science",
+      "category": "Notes",
+      "resource_link": "https://www.example.com/python-oop.pdf",
+      "resource_code": "aB3xYz",
       "short_url": "http://127.0.0.1:5000/aB3xYz",
-      "clicks": 0,
+      "views": 0,
       "created_at": "2026-06-15T14:35:00"
     }
   ]
@@ -257,17 +303,17 @@ The JWT token is returned by both `/api/register` and `/api/login`.
 
 ---
 
-#### 7️⃣ GET /{short_code} — Test Redirect
+#### 8️⃣ GET /{resource_code} — Test Redirect
 
 | Field | Value |
 |-------|-------|
 | **Method** | `GET` |
-| **URL** | `http://127.0.0.1:5000/aB3xYz` (use actual short_code) |
+| **URL** | `http://127.0.0.1:5000/aB3xYz` (use actual resource_code) |
 | **Headers** | None required |
 
-**Expected:** Browser/Thunder Client follows the 302 redirect to the original URL.
+**Expected:** Browser/Thunder Client follows the 302 redirect to the resource link.
 
-In Thunder Client, you'll see **Status: 302 Found** with the `Location` header pointing to your original URL. Disable "Follow Redirects" in Thunder Client to see the 302 status code.
+In Thunder Client, you'll see **Status: 302 Found** with the `Location` header pointing to your resource URL. Disable "Follow Redirects" in Thunder Client to see the 302 status code.
 
 ---
 
@@ -296,39 +342,47 @@ curl -X GET http://127.0.0.1:5000/api/profile \
   -H "Authorization: Bearer TOKEN"
 ```
 
-### 4. Create Short URL
+### 4. Create Study Material
 
 ```bash
-curl -X POST http://127.0.0.1:5000/api/shorten \
+curl -X POST http://127.0.0.1:5000/api/materials \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TOKEN" \
-  -d '{"url": "https://www.example.com/long-url"}'
+  -d '{"title": "Python OOP Notes", "resource_link": "https://www.example.com/python-oop.pdf", "subject": "Computer Science", "category": "Notes"}'
 ```
 
-### 5. List User URLs
+### 5. List User Materials
 
 ```bash
-curl -X GET http://127.0.0.1:5000/api/urls \
+curl -X GET http://127.0.0.1:5000/api/materials \
   -H "Authorization: Bearer TOKEN"
 ```
 
-### 6. Get Analytics
+### 6. Search Materials
+
+```bash
+curl -X GET "http://127.0.0.1:5000/api/materials/search?q=python" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+### 7. Get Analytics
 
 ```bash
 curl -X GET http://127.0.0.1:5000/api/analytics \
   -H "Authorization: Bearer TOKEN"
 ```
 
-### 7. Test Redirect
+### 8. Test Redirect
 
 ```bash
 curl -v http://127.0.0.1:5000/aB3xYz
 ```
+
 Use `-v` (verbose) to see the 302 redirect and `Location` header.
 
-### Complete Automated Test Script
+### Complete Automated Test Script (Linux/macOS/Git Bash)
 
-Save as `test_all.sh` (Linux/macOS) or use with Git Bash:
+Save as `test_all.sh`:
 
 ```bash
 #!/bin/bash
@@ -351,22 +405,25 @@ curl -s -X POST "$BASE/api/login" \
 echo -e "\n=== 3. Profile ==="
 curl -s "$BASE/api/profile" -H "Authorization: Bearer $TOKEN" | python -m json.tool
 
-echo -e "\n=== 4. Shorten URL ==="
-SHORTEN=$(curl -s -X POST "$BASE/api/shorten" \
+echo -e "\n=== 4. Create Material ==="
+MATERIAL=$(curl -s -X POST "$BASE/api/materials" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"url":"https://example.com/test"}')
-echo "$SHORTEN" | python -m json.tool
+  -d '{"title":"Python OOP Notes","resource_link":"https://example.com/python-oop.pdf","subject":"Computer Science","category":"Notes"}')
+echo "$MATERIAL" | python -m json.tool
 
-CODE=$(echo "$SHORTEN" | python -c "import sys,json; print(json.load(sys.stdin).get('url',{}).get('short_code',''))")
+CODE=$(echo "$MATERIAL" | python -c "import sys,json; print(json.load(sys.stdin).get('material',{}).get('resource_code',''))")
 
-echo -e "\n=== 5. List URLs ==="
-curl -s "$BASE/api/urls" -H "Authorization: Bearer $TOKEN" | python -m json.tool
+echo -e "\n=== 5. List Materials ==="
+curl -s "$BASE/api/materials" -H "Authorization: Bearer $TOKEN" | python -m json.tool
 
-echo -e "\n=== 6. Analytics ==="
+echo -e "\n=== 6. Search ==="
+curl -s "$BASE/api/materials/search?q=python" -H "Authorization: Bearer $TOKEN" | python -m json.tool
+
+echo -e "\n=== 7. Analytics ==="
 curl -s "$BASE/api/analytics" -H "Authorization: Bearer $TOKEN" | python -m json.tool
 
-echo -e "\n=== 7. Redirect (code: $CODE) ==="
+echo -e "\n=== 8. Redirect (code: $CODE) ==="
 curl -s -o /dev/null -w "HTTP Status: %{http_code}\nLocation: %{redirect_url}\n" "$BASE/$CODE"
 
 echo -e "\n=== ALL TESTS COMPLETE ==="
@@ -382,19 +439,21 @@ Follow this order for a complete end-to-end test:
 graph LR
     A[Register] --> B[Login]
     B --> C[Profile]
-    C --> D[Shorten URL]
-    D --> E[List URLs]
-    E --> F[Analytics]
-    F --> G[Test Redirect]
+    C --> D[Create Material]
+    D --> E[List Materials]
+    E --> F[Search]
+    F --> G[Analytics]
+    G --> H[Test Redirect]
 ```
 
 1. **Register** → Get JWT token
 2. **Login** → Verify same token works
 3. **Profile** → See user info and stats (should be 0/0)
-4. **Shorten URL** → Get short code
-5. **List URLs** → See the URL you just created
-6. **Analytics** → See aggregate stats
-7. **Test Redirect** → Follow the short link to original URL
+4. **Create Material** → Get resource code
+5. **List Materials** → See the material you just created
+6. **Search** → Find materials by keyword
+7. **Analytics** → See aggregate stats
+8. **Test Redirect** → Follow the resource link to original URL
 
 ---
 
@@ -465,19 +524,49 @@ curl -X GET http://127.0.0.1:5000/api/profile
 }
 ```
 
-### Shorten — Invalid URL
+### Create Material — Missing Title
 
 ```bash
-curl -X POST http://127.0.0.1:5000/api/shorten \
+curl -X POST http://127.0.0.1:5000/api/materials \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TOKEN" \
-  -d '{"url": "not-a-valid-url"}'
+  -d '{"resource_link": "https://example.com/doc"}'
 ```
 
 **Expected `400`:**
 ```json
 {
-  "error": "URL must start with http:// or https://"
+  "error": "title is required"
+}
+```
+
+### Create Material — Invalid URL
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/materials \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{"title": "Test", "resource_link": "not-a-valid-url"}'
+```
+
+**Expected `400`:**
+```json
+{
+  "error": "Resource link must start with http:// or https://"
+}
+```
+
+### Search — Missing Query
+
+```bash
+curl -X GET "http://127.0.0.1:5000/api/materials/search" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Expected `400`:**
+```json
+{
+  "error": "Search query 'q' is required"
 }
 ```
 
@@ -490,7 +579,7 @@ curl -v http://127.0.0.1:5000/NONEXIST
 **Expected `404`:**
 ```json
 {
-  "error": "URL not found"
+  "error": "Resource not found"
 }
 ```
 
@@ -503,7 +592,7 @@ Verify that data is stored correctly in PostgreSQL:
 ### Connect to PostgreSQL
 
 ```bash
-psql -U postgres -d url_shortner
+psql -U postgres -d study_material_hub
 ```
 
 ### Check Users Table
@@ -521,30 +610,30 @@ Expected output:
 
 ⚠️ **Note:** The `password` column is hashed — it should look like a long scrypt hash, not plain text.
 
-### Check URLs Table
+### Check Materials Table
 
 ```sql
-SELECT id, user_id, original_url, short_code, clicks, created_at FROM urls;
+SELECT id, user_id, title, subject, category, resource_code, views, created_at FROM materials;
 ```
 
 Expected output:
 ```
- id | user_id |            original_url            | short_code | clicks |         created_at
-----+---------+-------------------------------------+------------+--------+----------------------------
-  1 |       1 | https://www.example.com/long-url    | aB3xYz     |      0 | 2026-06-15 14:35:00.123456
+ id | user_id |      title       |    subject      | category | resource_code | views |         created_at
+----+---------+------------------+-----------------+----------+---------------+-------+----------------------------
+  1 |       1 | Python OOP Notes | Computer Science | Notes    | aB3xYz        |     0 | 2026-06-15 14:35:00.123456
 ```
 
 ### Verify Foreign Key Constraint
 
 ```sql
 -- This should fail with foreign key violation
-INSERT INTO urls (user_id, original_url, short_code)
-VALUES (999, 'https://example.com', 'test123');
+INSERT INTO materials (user_id, title, resource_link, resource_code)
+VALUES (999, 'Test', 'https://example.com', 'test123');
 ```
 
 **Expected Error:**
 ```
-ERROR:  insert or update on table "urls" violates foreign key constraint "urls_user_id_fkey"
+ERROR:  insert or update on table "materials" violates foreign key constraint "materials_user_id_fkey"
 ```
 
 ### Verify Unique Constraints
@@ -569,10 +658,11 @@ ERROR:  duplicate key value violates unique constraint "users_email_key"
 | `/api/register` | POST | ❌ | **201** | 400, 409, 500 |
 | `/api/login` | POST | ❌ | **200** | 400, 401 |
 | `/api/profile` | GET | ✅ | **200** | 401, 404 |
-| `/api/shorten` | POST | ✅ | **201** | 400, 401, 500 |
-| `/api/urls` | GET | ✅ | **200** | 401, 404 |
+| `/api/materials` | POST | ✅ | **201** | 400, 401, 500 |
+| `/api/materials` | GET | ✅ | **200** | 401, 404 |
+| `/api/materials/search?q=` | GET | ✅ | **200** | 400, 401, 404 |
 | `/api/analytics` | GET | ✅ | **200** | 401, 404 |
-| `/<short_code>` | GET | ❌ | **302** | 404 |
+| `/<resource_code>` | GET | ❌ | **302** | 404 |
 
 ---
 
@@ -592,12 +682,12 @@ brew services start postgresql
 sudo systemctl start postgresql
 ```
 
-### "FATAL: database 'url_shortner' does not exist"
+### "FATAL: database 'study_material_hub' does not exist"
 
 ```bash
-createdb -U postgres url_shortner
+createdb -U postgres study_material_hub
 # or via psql:
-# CREATE DATABASE url_shortner;
+# CREATE DATABASE study_material_hub;
 ```
 
 ### "ModuleNotFoundError: No module named 'psycopg2'"
@@ -606,7 +696,7 @@ createdb -U postgres url_shortner
 pip install -r requirements.txt
 ```
 
-### Token works on /api/profile but not on /api/shorten
+### Token works on /api/profile but not on /api/materials
 
 The token is likely being sent as a query parameter or in the wrong header. Ensure it's in the `Authorization` header:
 ```

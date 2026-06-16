@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — URL Shortener</title>
+  <title>Dashboard — Study Material Hub</title>
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -29,8 +29,8 @@
   <nav class="navbar-modern d-flex align-items-center justify-content-between">
     <!-- Left: Brand -->
     <a class="navbar-brand" href="/dashboard">
-      <span class="brand-icon"><i class="bi bi-link-45deg"></i></span>
-      <span>URL Shortener</span>
+      <span class="brand-icon"><i class="bi bi-journal-bookmark-fill"></i></span>
+      <span>Study Material Hub</span>
     </a>
 
     <!-- Right: Actions -->
@@ -95,44 +95,44 @@
       <!-- Welcome Header -->
       <div class="dashboard-welcome mb-4">
         <h1>Welcome back, <span id="user-greeting" class="text-gradient">there</span> 👋</h1>
-        <p>Here's an overview of your shortened URLs and their performance.</p>
+        <p>Here's an overview of your study materials and their performance.</p>
       </div>
 
       <!-- ===== STAT CARDS ROW ===== -->
       <div class="row g-3 mb-4">
 
-        <!-- Stat 1: Total URLs -->
+        <!-- Stat 1: Total Materials -->
         <div class="col-6 col-lg-3">
           <div class="card-dashboard stat-card">
             <div class="stat-icon-wrap stat-icon-purple">
-              <i class="bi bi-link-45deg"></i>
+              <i class="bi bi-journal-bookmark-fill"></i>
             </div>
-            <div class="stat-label">Total URLs</div>
-            <div class="stat-value" id="total-urls">0</div>
-            <div class="stat-icon-bg"><i class="bi bi-link-45deg"></i></div>
+            <div class="stat-label">Total Materials</div>
+            <div class="stat-value" id="total-materials">0</div>
+            <div class="stat-icon-bg"><i class="bi bi-journal-bookmark-fill"></i></div>
           </div>
         </div>
 
-        <!-- Stat 2: Total Clicks -->
+        <!-- Stat 2: Total Views -->
         <div class="col-6 col-lg-3">
           <div class="card-dashboard stat-card">
             <div class="stat-icon-wrap stat-icon-cyan">
               <i class="bi bi-graph-up-arrow"></i>
             </div>
-            <div class="stat-label">Total Clicks</div>
-            <div class="stat-value" id="total-clicks">0</div>
+            <div class="stat-label">Total Views</div>
+            <div class="stat-value" id="total-views">0</div>
             <div class="stat-icon-bg"><i class="bi bi-graph-up-arrow"></i></div>
           </div>
         </div>
 
-        <!-- Stat 3: Most Popular URL -->
+        <!-- Stat 3: Most Viewed Material -->
         <div class="col-6 col-lg-3">
           <div class="card-dashboard stat-card">
             <div class="stat-icon-wrap stat-icon-green">
               <i class="bi bi-trophy-fill"></i>
             </div>
-            <div class="stat-label">Top URL</div>
-            <div class="stat-value" id="top-url" style="font-size: 0.95rem; word-break: break-all;">N/A</div>
+            <div class="stat-label">Top Material</div>
+            <div class="stat-value" id="top-material" style="font-size: 0.95rem; word-break: break-all;">N/A</div>
             <div class="stat-icon-bg"><i class="bi bi-trophy-fill"></i></div>
           </div>
         </div>
@@ -143,72 +143,104 @@
             <div class="stat-icon-wrap stat-icon-orange">
               <i class="bi bi-bar-chart-fill"></i>
             </div>
-            <div class="stat-label">Avg. Clicks / URL</div>
-            <div class="stat-value" id="avg-clicks">0</div>
+            <div class="stat-label">Avg. Views / Material</div>
+            <div class="stat-value" id="avg-views">0</div>
             <div class="stat-icon-bg"><i class="bi bi-bar-chart-fill"></i></div>
           </div>
         </div>
 
       </div><!-- /row stats -->
 
-      <!-- ===== URL SHORTENER INPUT ===== -->
+      <!-- ===== SEARCH BAR ===== -->
       <div class="card-dashboard mb-4">
         <h5 class="fw-bold mb-3">
-          <i class="bi bi-link-45deg me-2" style="color: var(--accent-primary);"></i>
-          Create New Short URL
+          <i class="bi bi-search me-2" style="color: var(--accent-primary);"></i>
+          Search Your Materials
         </h5>
         <div class="url-shortener-input">
           <input
-            type="url"
-            id="url-input"
+            type="text"
+            id="search-input"
             class="form-control"
-            placeholder="Paste your long URL here (e.g., https://example.com/very/long/path)"
+            placeholder="Search by title, description, subject, or category..."
           >
-          <button id="shorten-btn" class="btn btn-primary px-4" onclick="shortenUrl()" style="white-space: nowrap;">
-            <i class="bi bi-link-45deg me-2"></i>Shorten URL
+          <button id="search-btn" class="btn btn-primary px-4" onclick="searchMaterials()" style="white-space: nowrap;">
+            <i class="bi bi-search me-2"></i>Search
           </button>
         </div>
       </div>
 
-      <!-- ===== URLS TABLE / EMPTY STATE ===== -->
+      <!-- ===== CREATE MATERIAL FORM ===== -->
+      <div class="card-dashboard mb-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-plus-circle me-2" style="color: var(--accent-primary);"></i>
+          Add New Study Material
+        </h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <input type="text" id="material-title" class="form-control" placeholder="Title (e.g., Python OOP Notes)">
+          </div>
+          <div class="col-md-6">
+            <input type="url" id="material-link" class="form-control" placeholder="Resource Link (e.g., https://example.com/notes.pdf)">
+          </div>
+          <div class="col-md-4">
+            <input type="text" id="material-subject" class="form-control" placeholder="Subject (e.g., Computer Science)">
+          </div>
+          <div class="col-md-4">
+            <input type="text" id="material-category" class="form-control" placeholder="Category (e.g., Notes, Video, Book)">
+          </div>
+          <div class="col-md-4">
+            <button id="create-material-btn" class="btn btn-primary w-100 px-4" onclick="createMaterial()" style="white-space: nowrap; height: 100%;">
+              <i class="bi bi-plus-lg me-2"></i>Add Material
+            </button>
+          </div>
+          <div class="col-12">
+            <textarea id="material-description" class="form-control" rows="2" placeholder="Description (optional)"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MATERIALS TABLE / EMPTY STATE ===== -->
       <div class="card-dashboard">
 
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h5 class="fw-bold mb-0">
             <i class="bi bi-table me-2" style="color: var(--accent-primary);"></i>
-            Your URLs
+            <span id="table-title">Your Materials</span>
           </h5>
-          <span id="url-count-badge" style="background: var(--accent-primary-light); color: var(--accent-primary); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 600;">
-            <span id="total-urls-badge">0</span> links
+          <span id="material-count-badge" style="background: var(--accent-primary-light); color: var(--accent-primary); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 600;">
+            <span id="total-materials-badge">0</span> resources
           </span>
         </div>
 
         <!-- Empty State -->
         <div id="empty-state" class="empty-state" style="display: none;">
-          <div class="empty-icon"><i class="bi bi-link-45deg"></i></div>
-          <h5>No URLs yet</h5>
-          <p>Paste a URL above and click "Shorten URL" to create your first short link.</p>
+          <div class="empty-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+          <h5>No materials yet</h5>
+          <p>Add your first study material above to start organizing your resources.</p>
         </div>
 
         <!-- Table -->
         <div class="table-responsive-modern">
-          <table id="url-table" class="table table-urls" style="display: none;">
+          <table id="material-table" class="table table-urls" style="display: none;">
             <thead>
               <tr>
-                <th style="width: 30%;">Original URL</th>
-                <th style="width: 25%;">Short URL</th>
-                <th style="width: 10%;">Clicks</th>
-                <th style="width: 15%;">Created</th>
-                <th style="width: 20%;">Actions</th>
+                <th style="width: 18%;">Title</th>
+                <th style="width: 12%;">Subject</th>
+                <th style="width: 12%;">Category</th>
+                <th style="width: 22%;">Resource Link</th>
+                <th style="width: 8%;">Views</th>
+                <th style="width: 13%;">Created</th>
+                <th style="width: 15%;">Actions</th>
               </tr>
             </thead>
-            <tbody id="url-table-body">
+            <tbody id="material-table-body">
               <!-- Dynamically populated -->
             </tbody>
           </table>
         </div>
 
-      </div><!-- /card URLs -->
+      </div><!-- /card materials -->
 
     </div><!-- /container-fluid -->
 

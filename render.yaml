@@ -1,15 +1,13 @@
 services:
   - type: web
-    name: url-shortner
+    name: study-material-hub
     runtime: python
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:create_app --worker-class gthread --workers 2 --threads 4 --bind 0.0.0.0:$PORT --timeout 120
-    healthCheckPath: /api/profile
+    startCommand: uvicorn app_fastapi:app --host 0.0.0.0 --port $PORT --workers 2 --timeout-keep-alive 120
+    healthCheckPath: /health
     envVars:
-      - key: FLASK_ENV
-        value: production
       - key: PRODUCTION
         value: "true"
       - key: DEBUG
@@ -21,15 +19,15 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: BASE_URL
-        value: https://url-shortner.onrender.com
+        value: https://study-material-hub.onrender.com
       - key: DATABASE_URL
         fromDatabase:
-          name: url-shortner-db
+          name: study-material-hub-db
           property: connectionString
 
 databases:
-  - name: url-shortner-db
-    databaseName: url_shortner
+  - name: study-material-hub-db
+    databaseName: study_material_hub
     region: oregon
     plan: free
     ipAllowList: []

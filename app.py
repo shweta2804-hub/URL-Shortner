@@ -3,7 +3,7 @@ from flask_jwt_extended import JWTManager
 from config import Config
 from database import init_db
 from routes.auth import auth_bp
-from routes.urls import urls_bp
+from routes.materials import materials_bp
 
 jwt = JWTManager()
 
@@ -36,7 +36,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(auth_bp)
-    app.register_blueprint(urls_bp)
+    app.register_blueprint(materials_bp)
 
     # ===== HTML FORM-BASED ROUTES (preserved for backward compat) =====
 

@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "URL Shortner API",
-    "description": "Complete API documentation for the URL Shortner application.\n\n## Authentication\nAll endpoints except `/api/register`, `/api/login`, and `/<code>` require a JWT token in the `Authorization` header:\n```\nAuthorization: Bearer <your-token>\n```\n\n## Base URL\n- Local: `http://127.0.0.1:5000`\n- Production: Set `base_url` variable accordingly",
+    "name": "Study Material Hub API",
+    "description": "Complete API documentation for the Study Material Hub application.\n\n## Authentication\nAll endpoints except `/api/register`, `/api/login`, and `/<code>` require a JWT token in the `Authorization` header:\n```\nAuthorization: Bearer <your-token>\n```\n\n## Base URL\n- Local: `http://127.0.0.1:5000`\n- Production: Set `base_url` variable accordingly",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

@@ -74,46 +74,58 @@ def execute_query(query, params=None, fetchone=False, fetchall=False):
 
 def init_db():
     """Create all required tables and indexes if they don't exist."""
-    conn = psycopg2.connect(Config.DATABASE_URL)
-    conn.autocommit = False
-    cur = conn.cursor()
+    with get_db() as conn:
+        cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(80) UNIQUE NOT NULL,
-            email VARCHAR(120) UNIQUE NOT NULL,
-            password VARCHAR(256) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(80) UNIQUE NOT NULL,
+                email VARCHAR(120) UNIQUE NOT NULL,
+                password VARCHAR(256) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS urls (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL
-                REFERENCES users(id) ON DELETE CASCADE,
-            original_url TEXT NOT NULL,
-            short_code VARCHAR(10) UNIQUE NOT NULL,
-            clicks INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS materials (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL
+                    REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(255) NOT NULL,
+                description TEXT DEFAULT '',
+                subject VARCHAR(100) DEFAULT '',
+                category VARCHAR(100) DEFAULT '',
+                resource_link TEXT NOT NULL,
+                resource_code VARCHAR(10) UNIQUE NOT NULL,
+                views INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
 
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_urls_short_code
-        ON urls(short_code);
-    """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_materials_resource_code
+            ON materials(resource_code);
+        """)
 
-    cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_urls_user_id
-        ON urls(user_id);
-    """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_materials_user_id
+            ON materials(user_id);
+        """)
 
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("Database tables initialized successfully.")
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_materials_category
+            ON materials(category);
+        """)
+
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_materials_subject
+            ON materials(subject);
+        """)
+
+        cur.close()
+
+    print("Database tables initialized successfully (pool).")
 
 
 if __name__ == "__main__":

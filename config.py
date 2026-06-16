@@ -6,10 +6,15 @@ load_dotenv()
 
 
 class Config:
-    """Application configuration loaded from environment variables."""
+    """Application configuration loaded from environment variables.
+
+    All secrets MUST be set via .env or environment variables.
+    No hard-coded fallbacks — the app will refuse to start if
+    critical values are missing.
+    """
 
     # Flask
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-this-in-production")
+    SECRET_KEY = os.getenv("SECRET_KEY")
     DEBUG = os.getenv("DEBUG", "false").lower() == "true"
     PRODUCTION = os.getenv("PRODUCTION", "false").lower() == "true"
 
@@ -26,10 +31,7 @@ class Config:
     JWT_ERROR_MESSAGE_KEY = "error"
 
     # PostgreSQL
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:postgres@localhost:5432/url_shortner"
-    )
+    DATABASE_URL = os.getenv("DATABASE_URL")
     DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", 1))
     DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", 10))
 
@@ -39,16 +41,27 @@ class Config:
 
     @classmethod
     def validate(cls):
-        """Validate critical config in production mode."""
+        """Validate critical config. Raises RuntimeError if anything is missing."""
+        errors = []
+
+        # Always required (dev + production)
+        if not cls.DATABASE_URL:
+            errors.append("DATABASE_URL is not set — check your .env file")
+        if not cls.SECRET_KEY:
+            errors.append("SECRET_KEY is not set — check your .env file")
+        if not cls.JWT_SECRET_KEY:
+            errors.append("JWT_SECRET_KEY is not set — check your .env file")
+
+        # Additional production-only checks
         if cls.PRODUCTION:
-            errors = []
-            if not cls.SECRET_KEY or cls.SECRET_KEY == "change-this-in-production":
-                errors.append("SECRET_KEY must be set in production")
-            if not cls.JWT_SECRET_KEY:
-                errors.append("JWT_SECRET_KEY must be set in production")
-            if not cls.DATABASE_URL:
-                errors.append("DATABASE_URL must be set in production")
-            if errors:
-                raise RuntimeError(
-                    "Configuration errors:\n  - " + "\n  - ".join(errors)
-                )
+            if cls.SECRET_KEY and len(cls.SECRET_KEY) < 32:
+                errors.append("SECRET_KEY should be at least 32 characters in production")
+            if cls.JWT_SECRET_KEY and len(cls.JWT_SECRET_KEY) < 32:
+                errors.append("JWT_SECRET_KEY should be at least 32 characters in production")
+            if cls.DEBUG:
+                errors.append("DEBUG must be false in production")
+
+        if errors:
+            raise RuntimeError(
+                "Configuration errors:\n  - " + "\n  - ".join(errors)
+            )

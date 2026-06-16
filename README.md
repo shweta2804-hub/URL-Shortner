@@ -1,15 +1,17 @@
-# 🔗 URL Shortner
+# 📚 Study Material Hub
 
-A production-ready **URL shortening service** built with **Flask** and **PostgreSQL**. Features JWT-based authentication, RESTful APIs, click analytics, and deployment support for **Render**.
+A production-ready **study material organizer** built with **Flask** and **PostgreSQL**. Features JWT-based authentication, RESTful APIs, view analytics, search, and deployment support for **Render**.
 
 ---
 
 ## ✨ Features
 
-- **URL Shortening** — Convert long URLs into short, shareable links
+- **Study Materials** — Create materials with title, description, subject, category, and resource link
+- **Auto-generated Resource Codes** — Shareable short links for each resource
 - **JWT Authentication** — Secure register/login with JSON Web Tokens
-- **User Dashboards** — Each user sees only their own shortened URLs
-- **Click Analytics** — Track total clicks, average clicks, and top-performing URLs
+- **User Dashboards** — Each user sees only their own materials
+- **View Analytics** — Track total views, average views, and top-performing materials
+- **Search** — Search materials by title, description, subject, or category
 - **RESTful API** — Full JSON API for integration with frontend apps or mobile
 - **PostgreSQL** — Robust relational database with connection pooling
 - **Password Security** — Passwords hashed with `werkzeug.security`
@@ -33,7 +35,7 @@ A production-ready **URL shortening service** built with **Flask** and **Postgre
 ## 📁 Project Structure
 
 ```
-URL Shortner/
+Study Material Hub/
 │
 ├── app.py                 # Application factory, blueprint registration
 ├── config.py              # Configuration from environment variables
@@ -42,12 +44,12 @@ URL Shortner/
 ├── models/
 │   ├── __init__.py
 │   ├── user.py            # User CRUD operations
-│   └── url.py             # URL CRUD & analytics operations
+│   └── material.py        # Material CRUD, search & analytics operations
 │
 ├── routes/
 │   ├── __init__.py
 │   ├── auth.py            # /api/register, /api/login, /api/profile
-│   └── urls.py            # /api/shorten, /api/urls, /api/analytics, /<code>
+│   └── materials.py       # /api/materials, /api/analytics, /<code>
 │
 ├── templates/             # HTML templates (legacy form-based UI)
 │   ├── login.html
@@ -55,13 +57,16 @@ URL Shortner/
 │   └── dashboard.html
 │
 ├── static/
-│   └── style.css
+│   ├── style.css
+│   └── js/
+│       └── main.js
 │
 ├── .env                   # Environment variables (NOT committed)
 ├── .gitignore
 ├── requirements.txt
 ├── render.yaml            # Render deployment config
 ├── postman_collection.json
+├── MIGRATION_PLAN.md
 └── README.md
 ```
 
@@ -109,7 +114,7 @@ Create the database:
 psql -U postgres
 
 # Create database
-CREATE DATABASE url_shortner;
+CREATE DATABASE study_material_hub;
 
 # Exit
 \q
@@ -120,7 +125,7 @@ CREATE DATABASE url_shortner;
 Edit `.env` with your PostgreSQL credentials:
 
 ```ini
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/url_shortner
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/study_material_hub
 JWT_SECRET_KEY=your-random-secret-key-here
 SECRET_KEY=another-random-secret-key
 ```
@@ -133,7 +138,7 @@ python app.py
 
 The server starts at **http://127.0.0.1:5000**.
 
-On first startup, the database tables (`users` and `urls`) are created automatically.
+On first startup, the database tables (`users` and `materials`) are created automatically.
 
 ---
 
@@ -217,7 +222,7 @@ Authenticate and receive a JWT token.
 
 ### `GET /api/profile`
 
-Get the authenticated user's profile and URL statistics.
+Get the authenticated user's profile and material statistics.
 
 **Headers:** `Authorization: Bearer <token>`
 
@@ -231,8 +236,10 @@ Get the authenticated user's profile and URL statistics.
     "created_at": "2026-06-15T14:30:00"
   },
   "stats": {
-    "total_urls": 5,
-    "total_clicks": 42
+    "total_materials": 5,
+    "total_views": 42,
+    "avg_views": 8,
+    "top_material": "Python OOP Notes"
   }
 }
 ```
@@ -241,42 +248,50 @@ Get the authenticated user's profile and URL statistics.
 
 ---
 
-### `POST /api/shorten`
+### `POST /api/materials`
 
-Create a shortened URL. Requires authentication.
+Create a new study material. Requires authentication.
 
 **Headers:** `Authorization: Bearer <token>`
 
 **Request:**
 ```json
 {
-  "url": "https://example.com/very/long/url/that/needs/shortening"
+  "title": "Python OOP Notes",
+  "resource_link": "https://example.com/python-oop.pdf",
+  "description": "Comprehensive notes on OOP in Python",
+  "subject": "Computer Science",
+  "category": "Notes"
 }
 ```
 
 **Response `201` — Created:**
 ```json
 {
-  "message": "URL shortened successfully",
-  "url": {
+  "message": "Study material created successfully",
+  "material": {
     "id": 1,
     "user_id": 1,
-    "original_url": "https://example.com/very/long/url/that/needs/shortening",
-    "short_code": "aB3xYz",
+    "title": "Python OOP Notes",
+    "description": "Comprehensive notes on OOP in Python",
+    "subject": "Computer Science",
+    "category": "Notes",
+    "resource_link": "https://example.com/python-oop.pdf",
+    "resource_code": "aB3xYz",
     "short_url": "http://127.0.0.1:5000/aB3xYz",
-    "clicks": 0,
+    "views": 0,
     "created_at": "2026-06-15T14:30:00"
   }
 }
 ```
 
-**Errors:** `400` (invalid URL), `401` (no token), `500` (server error)
+**Errors:** `400` (invalid data), `401` (no token), `500` (server error)
 
 ---
 
-### `GET /api/urls`
+### `GET /api/materials`
 
-List all URLs created by the authenticated user, newest first.
+List all materials created by the authenticated user, newest first.
 
 **Headers:** `Authorization: Bearer <token>`
 
@@ -284,14 +299,17 @@ List all URLs created by the authenticated user, newest first.
 ```json
 {
   "total": 2,
-  "urls": [
+  "materials": [
     {
       "id": 2,
       "user_id": 1,
-      "original_url": "https://example.com/page2",
-      "short_code": "XyZ789",
+      "title": "Linear Algebra Notes",
+      "subject": "Mathematics",
+      "category": "Notes",
+      "resource_link": "https://example.com/linear-algebra.pdf",
+      "resource_code": "XyZ789",
       "short_url": "http://127.0.0.1:5000/XyZ789",
-      "clicks": 5,
+      "views": 5,
       "created_at": "2026-06-15T14:35:00"
     }
   ]
@@ -302,26 +320,61 @@ List all URLs created by the authenticated user, newest first.
 
 ---
 
-### `GET /api/analytics`
+### `GET /api/materials/search?q=query`
 
-Get detailed click analytics for the authenticated user's URLs.
+Search materials by title, description, subject, or category.
 
 **Headers:** `Authorization: Bearer <token>`
 
 **Response `200` — OK:**
 ```json
 {
-  "total_urls": 5,
-  "total_clicks": 100,
-  "avg_clicks": 20,
-  "most_clicked_count": 50,
-  "top_urls": [
+  "total": 1,
+  "query": "python",
+  "materials": [
     {
       "id": 1,
-      "original_url": "https://example.com/popular",
-      "short_code": "abc123",
+      "user_id": 1,
+      "title": "Python OOP Notes",
+      "subject": "Computer Science",
+      "category": "Notes",
+      "resource_link": "https://example.com/python-oop.pdf",
+      "resource_code": "aB3xYz",
+      "short_url": "http://127.0.0.1:5000/aB3xYz",
+      "views": 10,
+      "created_at": "2026-06-15T14:30:00"
+    }
+  ]
+}
+```
+
+**Errors:** `400` (no query), `401` (no token), `404` (user not found)
+
+---
+
+### `GET /api/analytics`
+
+Get detailed view analytics for the authenticated user's materials.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response `200` — OK:**
+```json
+{
+  "total_materials": 5,
+  "total_views": 100,
+  "avg_views": 20,
+  "most_viewed_count": 50,
+  "top_materials": [
+    {
+      "id": 1,
+      "title": "Python OOP Notes",
+      "subject": "Computer Science",
+      "category": "Notes",
+      "resource_link": "https://example.com/python-oop.pdf",
+      "resource_code": "abc123",
       "short_url": "http://127.0.0.1:5000/abc123",
-      "clicks": 50,
+      "views": 50,
       "created_at": "2026-06-15T14:30:00"
     }
   ]
@@ -332,13 +385,13 @@ Get detailed click analytics for the authenticated user's URLs.
 
 ---
 
-### `GET /{short_code}`
+### `GET /{resource_code}`
 
-Follow a short URL to its original destination. No authentication required.
+Follow a resource link to its original destination. No authentication required.
 
-**Response:** `302` — Redirect to the original URL
+**Response:** `302` — Redirect to the resource link
 
-**Errors:** `404` — Short code not found
+**Errors:** `404` — Resource code not found
 
 ---
 
@@ -389,25 +442,6 @@ If not using Blueprint:
 
 ---
 
-## 📸 Screenshots
-
-<!--
-Add screenshots here after deployment:
-
-### Login Page
-![Login Page](screenshots/login.png)
-
-### Dashboard
-![Dashboard](screenshots/dashboard.png)
-
-### API Response (Postman)
-![Postman API](screenshots/postman.png)
---->
-
-*Screenshots will be added after deployment.*
-
----
-
 ## 🧪 Testing with Postman
 
 1. Open **Postman**
@@ -440,15 +474,16 @@ Add screenshots here after deployment:
 - [ ] Connect repository to Render
 - [ ] Verify Blueprint deployment or configure manually
 - [ ] Check logs for any startup errors
-- [ ] Test health endpoint: `GET /api/profile` with a valid token
+- [ ] Test health endpoint: `GET /api/materials` with a valid token
 - [ ] Set up custom domain (optional)
 
 ### Post-Deployment
 
 - [ ] Register a test user
-- [ ] Create a short URL
+- [ ] Create a study material
 - [ ] Verify the redirect works
 - [ ] Check analytics data
+- [ ] Test search functionality
 - [ ] Monitor error logs
 
 ---

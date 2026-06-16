@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from config import Config
 import models.user as UserModel
-import models.url as UrlModel
+import models.material as MaterialModel
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -136,16 +136,16 @@ def profile():
         return jsonify({"error": "User not found"}), 404
 
     # Use lightweight stats query instead of full analytics
-    stats = UrlModel.get_user_stats(user["id"])
+    stats = MaterialModel.get_user_stats(user["id"])
     
     # Get analytics for additional data
-    analytics_data = UrlModel.get_user_analytics(user["id"])
+    analytics_data = MaterialModel.get_user_analytics(user["id"])
 
     return jsonify({
         "user": user,
         "stats": {
             **stats,
-            "avg_clicks": analytics_data.get("avg_clicks", 0),
-            "top_url": analytics_data["top_urls"][0]["original_url"] if analytics_data.get("top_urls") else "N/A"
+            "avg_views": analytics_data.get("avg_views", 0),
+            "top_material": analytics_data["top_materials"][0]["title"] if analytics_data.get("top_materials") else "N/A"
         }
     }), 200

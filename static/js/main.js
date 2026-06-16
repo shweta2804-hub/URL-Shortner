@@ -1,5 +1,5 @@
 /* ============================================================
-   URL Shortener - Main Application Script
+   Study Material Hub - Main Application Script
    Modern SaaS Frontend with API integration
    ============================================================ */
 
@@ -259,33 +259,50 @@ function loadDashboard() {
     .then(res => res.json())
     .then(data => {
       if (data.stats) {
-        document.getElementById('total-urls').textContent = data.stats.total_urls || 0;
-        document.getElementById('total-clicks').textContent = data.stats.total_clicks || 0;
-        document.getElementById('top-url').textContent = data.stats.top_url || 'N/A';
-        document.getElementById('avg-clicks').textContent = data.stats.avg_clicks || 0;
+        document.getElementById('total-materials').textContent = data.stats.total_materials || 0;
+        document.getElementById('total-views').textContent = data.stats.total_views || 0;
+        document.getElementById('top-material').textContent = data.stats.top_material || 'N/A';
+        document.getElementById('avg-views').textContent = data.stats.avg_views || 0;
       }
     })
     .catch(() => {});
 
-  // Load URLs
-  loadUrls();
+  // Load materials
+  loadMaterials();
 }
 
-// Load URL list
-function loadUrls() {
-  fetch('/api/urls', { headers: getAuthHeaders() })
+// Load materials list
+function loadMaterials(searchQuery) {
+  let url = '/api/materials';
+  if (searchQuery) {
+    url = `/api/materials/search?q=${encodeURIComponent(searchQuery)}`;
+  }
+
+  fetch(url, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
-      const container = document.getElementById('url-table-body');
+      const container = document.getElementById('material-table-body');
       const emptyState = document.getElementById('empty-state');
-      const table = document.getElementById('url-table');
+      const table = document.getElementById('material-table');
+      const tableTitle = document.getElementById('table-title');
 
       if (!container) return;
 
       container.innerHTML = '';
 
-      if (!data.urls || data.urls.length === 0) {
-        if (emptyState) emptyState.style.display = 'block';
+      const materials = data.materials || [];
+
+      if (materials.length === 0) {
+        if (emptyState) {
+          emptyState.style.display = 'block';
+          if (searchQuery) {
+            emptyState.querySelector('h5').textContent = 'No results found';
+            emptyState.querySelector('p').textContent = `No materials match "${searchQuery}". Try a different search term.`;
+          } else {
+            emptyState.querySelector('h5').textContent = 'No materials yet';
+            emptyState.querySelector('p').textContent = 'Add your first study material above to start organizing your resources.';
+          }
+        }
         if (table) table.style.display = 'none';
         return;
       }
@@ -293,27 +310,47 @@ function loadUrls() {
       if (emptyState) emptyState.style.display = 'none';
       if (table) table.style.display = '';
 
-      // Update URL count stat
-      document.getElementById('total-urls').textContent = data.urls.length;
+      // Update material count stat
+      document.getElementById('total-materials').textContent = materials.length;
 
-      data.urls.forEach(url => {
-        const shortUrl = `${window.location.origin}/${url.short_code}`;
-        const created = new Date(url.created_at).toLocaleDateString('en-US', {
+      // Update table title for search
+      if (tableTitle && searchQuery) {
+        tableTitle.textContent = `Search results for "${searchQuery}"`;
+      } else if (tableTitle) {
+        tableTitle.textContent = 'Your Materials';
+      }
+
+      materials.forEach(material => {
+        const shortUrl = `${window.location.origin}/${material.resource_code}`;
+        const created = new Date(material.created_at).toLocaleDateString('en-US', {
           year: 'numeric', month: 'short', day: 'numeric'
         });
+        const titleDisplay = material.title.length > 40
+          ? material.title.substring(0, 40) + '...'
+          : material.title;
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><div class="url-cell" title="${escapeHtml(url.original_url)}">${escapeHtml(url.original_url)}</div></td>
-          <td><code style="color: var(--accent-primary); font-size: 0.85rem;">${shortUrl}</code></td>
-          <td><span class="badge-click"><i class="bi bi-eye me-1"></i>${url.clicks || 0}</span></td>
+          <td>
+            <div class="url-cell" title="${escapeHtml(material.title)}">
+              <strong>${escapeHtml(titleDisplay)}</strong>
+            </div>
+            ${material.description ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${escapeHtml(material.description.substring(0, 60))}${material.description.length > 60 ? '...' : ''}</div>` : ''}
+          </td>
+          <td><span class="badge-click" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">${escapeHtml(material.subject || '-')}</span></td>
+          <td><span class="badge-click" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">${escapeHtml(material.category || '-')}</span></td>
+          <td><code style="color: var(--accent-primary); font-size: 0.8rem; word-break: break-all;">${escapeHtml(material.resource_link.substring(0, 50))}${material.resource_link.length > 50 ? '...' : ''}</code></td>
+          <td><span class="badge-click"><i class="bi bi-eye me-1"></i>${material.views || 0}</span></td>
           <td style="color: var(--text-secondary); font-size: 0.85rem;">${created}</td>
           <td>
             <div class="d-flex gap-1">
-              <button class="btn-icon" title="Copy short URL" onclick="copyToClipboard('${shortUrl}', this)">
+              <button class="btn-icon" title="Open resource link" onclick="window.open('${escapeHtml(material.resource_link)}', '_blank')">
+                <i class="bi bi-box-arrow-up-right"></i>
+              </button>
+              <button class="btn-icon" title="Copy resource link" onclick="copyToClipboard('${shortUrl}', this)">
                 <i class="bi bi-files"></i>
               </button>
-              <button class="btn-icon" title="Delete URL" onclick="confirmDelete(${url.id})" style="color: var(--accent-danger);">
+              <button class="btn-icon" title="Delete material" onclick="confirmDelete(${material.id})" style="color: var(--accent-danger);">
                 <i class="bi bi-trash3"></i>
               </button>
             </div>
@@ -321,59 +358,111 @@ function loadUrls() {
         `;
         container.appendChild(row);
       });
+
+      // Update badge count
+      const badge = document.getElementById('total-materials-badge');
+      if (badge) badge.textContent = materials.length;
+
+      // Check if we need pagination / "show all" after search
+      if (searchQuery && materials.length > 0) {
+        const showAllRow = document.createElement('tr');
+        showAllRow.innerHTML = `
+          <td colspan="7" style="text-align: center; padding: 0.75rem;">
+            <a href="#" onclick="clearSearch(); return false;" style="font-size: 0.85rem;">
+              <i class="bi bi-arrow-left me-1"></i> Show all materials
+            </a>
+          </td>
+        `;
+        container.appendChild(showAllRow);
+      }
     })
     .catch(() => {});
 }
 
-// Shorten URL
-function shortenUrl() {
-  const input = document.getElementById('url-input');
-  const url = input.value.trim();
-  const btn = document.getElementById('shorten-btn');
+// ============================================================
+// 7. CREATE MATERIAL
+// ============================================================
+function createMaterial() {
+  const title = document.getElementById('material-title').value.trim();
+  const resourceLink = document.getElementById('material-link').value.trim();
+  const subject = document.getElementById('material-subject').value.trim();
+  const category = document.getElementById('material-category').value.trim();
+  const description = document.getElementById('material-description').value.trim();
+  const btn = document.getElementById('create-material-btn');
 
-  if (!url) {
-    showToast('Please enter a URL', 'error');
-    input.focus();
+  if (!title) {
+    showToast('Please enter a title', 'error');
+    document.getElementById('material-title').focus();
     return;
   }
 
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    showToast('URL must start with http:// or https://', 'error');
-    input.focus();
+  if (!resourceLink) {
+    showToast('Please enter a resource link', 'error');
+    document.getElementById('material-link').focus();
+    return;
+  }
+
+  if (!resourceLink.startsWith('http://') && !resourceLink.startsWith('https://')) {
+    showToast('Resource link must start with http:// or https://', 'error');
+    document.getElementById('material-link').focus();
     return;
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Shortening...';
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Adding...';
 
-  fetch('/api/shorten', {
+  fetch('/api/materials', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ url })
+    body: JSON.stringify({ title, resource_link: resourceLink, description, subject, category })
   })
   .then(res => res.json())
   .then(data => {
     btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>Shorten URL';
+    btn.innerHTML = '<i class="bi bi-plus-lg me-2"></i>Add Material';
 
-    if (data.url) {
-      input.value = '';
-      showToast('URL shortened successfully!', 'success');
-      loadUrls();
+    if (data.material) {
+      // Clear form
+      document.getElementById('material-title').value = '';
+      document.getElementById('material-link').value = '';
+      document.getElementById('material-subject').value = '';
+      document.getElementById('material-category').value = '';
+      document.getElementById('material-description').value = '';
+      showToast('Study material added successfully!', 'success');
+      loadMaterials();
       loadDashboard();
     } else {
-      showToast(data.error || 'Failed to shorten URL', 'error');
+      showToast(data.error || 'Failed to create material', 'error');
     }
   })
   .catch(() => {
     btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>Shorten URL';
+    btn.innerHTML = '<i class="bi bi-plus-lg me-2"></i>Add Material';
     showToast('Connection error. Please try again.', 'error');
   });
 }
 
 // ============================================================
-// 7. CLIPBOARD (Copy to Clipboard)
+// 8. SEARCH
+// ============================================================
+let searchTimeout = null;
+
+function searchMaterials() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) {
+    showToast('Please enter a search term', 'error');
+    return;
+  }
+  loadMaterials(query);
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  loadMaterials();
+}
+
+// ============================================================
+// 9. CLIPBOARD (Copy to Clipboard)
 // ============================================================
 function copyToClipboard(text, btnElement) {
   navigator.clipboard.writeText(text).then(() => {
@@ -403,9 +492,9 @@ function copyToClipboard(text, btnElement) {
 }
 
 // ============================================================
-// 8. DELETE CONFIRMATION
+// 10. DELETE CONFIRMATION
 // ============================================================
-function confirmDelete(urlId) {
+function confirmDelete(materialId) {
   // Remove existing overlay
   const existing = document.querySelector('.delete-confirm-overlay');
   if (existing) existing.remove();
@@ -415,11 +504,11 @@ function confirmDelete(urlId) {
   overlay.innerHTML = `
     <div class="delete-confirm-box">
       <div class="delete-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
-      <h5>Delete URL?</h5>
-      <p>This action cannot be undone. The short link will stop working.</p>
+      <h5>Delete Material?</h5>
+      <p>This action cannot be undone. The resource link will stop working.</p>
       <div class="delete-actions">
         <button class="btn btn-ghost" onclick="this.closest('.delete-confirm-overlay').remove()">Cancel</button>
-        <button class="btn btn-primary" style="background: var(--accent-danger); box-shadow: none;" onclick="deleteUrl(${urlId})">
+        <button class="btn btn-primary" style="background: var(--accent-danger); box-shadow: none;" onclick="deleteMaterial(${materialId})">
           <i class="bi bi-trash3 me-2"></i>Delete
         </button>
       </div>
@@ -428,22 +517,22 @@ function confirmDelete(urlId) {
   document.body.appendChild(overlay);
 }
 
-function deleteUrl(urlId) {
+function deleteMaterial(materialId) {
   // Close overlay
   const overlay = document.querySelector('.delete-confirm-overlay');
   if (overlay) overlay.remove();
 
-  fetch(`/api/urls/${urlId}`, {
+  fetch(`/api/materials/${materialId}`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   })
   .then(res => {
     if (res.ok) {
-      showToast('URL deleted successfully', 'success');
-      loadUrls();
+      showToast('Material deleted successfully', 'success');
+      loadMaterials();
       loadDashboard();
     } else {
-      showToast('Failed to delete URL', 'error');
+      showToast('Failed to delete material', 'error');
     }
   })
   .catch(() => {
@@ -452,7 +541,7 @@ function deleteUrl(urlId) {
 }
 
 // ============================================================
-// 9. LOGOUT
+// 11. LOGOUT
 // ============================================================
 function logout() {
   localStorage.removeItem('token');
@@ -461,7 +550,7 @@ function logout() {
 }
 
 // ============================================================
-// 10. UTILITY: Escape HTML
+// 12. UTILITY: Escape HTML
 // ============================================================
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -470,7 +559,7 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// 11. INIT
+// 13. INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   // Auto-init toast container
@@ -513,13 +602,24 @@ document.addEventListener('DOMContentLoaded', function() {
   if (window.location.pathname === '/dashboard') {
     loadDashboard();
 
-    // Enter key to shorten
-    const urlInput = document.getElementById('url-input');
-    if (urlInput) {
-      urlInput.addEventListener('keydown', function(e) {
+    // Enter key to search
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          shortenUrl();
+          searchMaterials();
+        }
+      });
+    }
+
+    // Enter key to create material (from title field)
+    const titleInput = document.getElementById('material-title');
+    if (titleInput) {
+      titleInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          createMaterial();
         }
       });
     }
